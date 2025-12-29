@@ -427,7 +427,7 @@ impl Polynomial<BigInt> {
             let converted_polynomial: Polynomial<_> = self
                 .elements
                 .iter()
-                .map(|coefficient| ModularInteger::<i32, _>::from_bigint(&coefficient, modulus))
+                .map(|coefficient| ModularInteger::<i32, _>::from_bigint(coefficient, modulus))
                 .collect();
             debug_assert_eq!(converted_polynomial.degree(), Some(degree));
             if converted_polynomial.is_square_free() {

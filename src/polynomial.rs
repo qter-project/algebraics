@@ -139,7 +139,7 @@ pub trait PolynomialCoefficient:
         coefficient
     }
     fn negate_element(element: &mut Self::Element) {
-        let zero = Self::make_zero_element(Cow::Borrowed(&element));
+        let zero = Self::make_zero_element(Cow::Borrowed(element));
         *element = -mem::replace(element, zero);
     }
     fn mul_element_by_usize(element: Cow<Self::Element>, multiplier: usize) -> Self::Element;
@@ -167,7 +167,7 @@ pub trait PolynomialCoefficient:
         }
         let mut retval = None;
         loop {
-            if exponent % 2 != 0 {
+            if !exponent.is_multiple_of(2) {
                 match &mut retval {
                     None => retval = Some(base.clone()),
                     Some(retval) => *retval *= &base,
@@ -187,7 +187,7 @@ pub trait PolynomialCoefficient:
         }
         let mut retval = None;
         loop {
-            if exponent % 2 != 0 {
+            if !exponent.is_multiple_of(2) {
                 match &mut retval {
                     None => retval = Some(base.clone()),
                     Some(retval) => *retval *= &base,
@@ -207,7 +207,7 @@ pub trait PolynomialCoefficient:
         }
         let mut retval = None;
         loop {
-            if exponent % 2 != 0 {
+            if !exponent.is_multiple_of(2) {
                 match &mut retval {
                     None => retval = Some(base.clone()),
                     Some(retval) => *retval *= &base,
@@ -494,7 +494,7 @@ impl Mul<DivisorIsOne> for &DivisorIsOne {
     }
 }
 
-impl<'a, 'b> Mul<&'a DivisorIsOne> for &'b DivisorIsOne {
+impl Mul<&DivisorIsOne> for &DivisorIsOne {
     type Output = DivisorIsOne;
     fn mul(self, _rhs: &DivisorIsOne) -> DivisorIsOne {
         DivisorIsOne
@@ -545,7 +545,7 @@ impl ExactDiv<DivisorIsOne> for &DivisorIsOne {
     }
 }
 
-impl<'a, 'b> ExactDiv<&'a DivisorIsOne> for &'b DivisorIsOne {
+impl ExactDiv<&DivisorIsOne> for &DivisorIsOne {
     type Output = DivisorIsOne;
     fn checked_exact_div(self, _rhs: &DivisorIsOne) -> Option<DivisorIsOne> {
         Some(DivisorIsOne)
@@ -1136,9 +1136,9 @@ impl<T: PolynomialCoefficient> From<(Vec<T::Element>, T::Divisor)> for Polynomia
     }
 }
 
-impl<T: PolynomialCoefficient> Into<(Vec<T::Element>, T::Divisor)> for Polynomial<T> {
-    fn into(self) -> (Vec<T::Element>, T::Divisor) {
-        (self.elements, self.divisor)
+impl<T: PolynomialCoefficient> From<Polynomial<T>> for (Vec<T::Element>, T::Divisor) {
+    fn from(val: Polynomial<T>) -> Self {
+        (val.elements, val.divisor)
     }
 }
 
@@ -1190,7 +1190,7 @@ impl<T: PolynomialCoefficient> Polynomial<T> {
     pub fn split_out_divisor(self) -> (Vec<T::Element>, T::Divisor) {
         self.into()
     }
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             elements: self.elements.iter(),
             divisor: &self.divisor,

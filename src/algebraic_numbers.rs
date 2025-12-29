@@ -95,7 +95,7 @@ pub struct RealAlgebraicNumber {
 
 impl fmt::Debug for RealAlgebraicNumber {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        debug_real_algebraic_number(&self.data(), f, "RealAlgebraicNumber")
+        debug_real_algebraic_number(self.data(), f, "RealAlgebraicNumber")
     }
 }
 
@@ -251,7 +251,7 @@ impl<'a> IntervalAndSignChanges<'a> {
         if let Some(sign_changes) = *get_sign_changes(self) {
             sign_changes
         } else {
-            let at = get_interval_bound(&self.interval);
+            let at = get_interval_bound(self.interval);
             let sign_changes =
                 sign_changes_at(primitive_sturm_sequence, ValueOrInfinity::Value(&at));
             *get_sign_changes(self) = Some(sign_changes);
@@ -297,22 +297,18 @@ impl<'a> IntervalAndSignChanges<'a> {
 impl Deref for IntervalAndSignChanges<'_> {
     type Target = DyadicFractionInterval;
     fn deref(&self) -> &DyadicFractionInterval {
-        &self.interval
+        self.interval
     }
 }
 
 impl DerefMut for IntervalAndSignChanges<'_> {
     fn deref_mut(&mut self) -> &mut DyadicFractionInterval {
-        &mut self.interval
+        self.interval
     }
 }
 
 fn distance(a: usize, b: usize) -> usize {
-    if a < b {
-        b - a
-    } else {
-        a - b
-    }
+    b.abs_diff(a)
 }
 
 #[derive(Debug)]
@@ -481,7 +477,7 @@ impl RealAlgebraicNumber {
     pub fn interval(&self) -> &DyadicFractionInterval {
         &self.data().interval
     }
-    fn interval_shrinker(&mut self) -> IntervalShrinker {
+    fn interval_shrinker(&mut self) -> IntervalShrinker<'_> {
         let RealAlgebraicNumberData {
             minimal_polynomial,
             interval,
@@ -609,7 +605,7 @@ impl RealAlgebraicNumber {
     }
     /// shrinks the interval till it doesn't contain zero
     #[must_use]
-    fn remove_zero_from_interval(&mut self) -> Option<(Sign, IntervalShrinker)> {
+    fn remove_zero_from_interval(&mut self) -> Option<(Sign, IntervalShrinker<'_>)> {
         let sign = match self.cmp_with_zero() {
             Ordering::Equal => return None,
             Ordering::Less => Sign::Negative,
@@ -956,9 +952,8 @@ struct ResultFactor {
 }
 
 impl ResultFactor {
-    fn factor(&self) -> Cow<Polynomial<BigInt>> {
-        self.primitive_sturm_sequence
-            .get(0)
+    fn factor(&self) -> Cow<'_, Polynomial<BigInt>> {
+        self.primitive_sturm_sequence.first()
             .map(Cow::Borrowed)
             .unwrap_or_else(|| Cow::Owned(Polynomial::zero()))
     }
@@ -1192,7 +1187,7 @@ impl Add<RealAlgebraicNumber> for &'_ RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> Add<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl Add<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn add(self, rhs: &RealAlgebraicNumber) -> RealAlgebraicNumber {
         self.clone().add(rhs)
@@ -1260,7 +1255,7 @@ impl Sub<RealAlgebraicNumber> for &'_ RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> Sub<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl Sub<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn sub(self, rhs: &RealAlgebraicNumber) -> RealAlgebraicNumber {
         self.clone().sub(rhs)
@@ -1432,7 +1427,7 @@ impl Mul<RealAlgebraicNumber> for &'_ RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> Mul<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl Mul<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn mul(self, rhs: &RealAlgebraicNumber) -> RealAlgebraicNumber {
         self.clone().mul(rhs)
@@ -1455,7 +1450,7 @@ impl ExactDivAssign<&'_ RealAlgebraicNumber> for RealAlgebraicNumber {
 impl AlwaysExactDiv<RealAlgebraicNumber> for RealAlgebraicNumber {}
 impl AlwaysExactDiv<&'_ RealAlgebraicNumber> for RealAlgebraicNumber {}
 impl AlwaysExactDiv<RealAlgebraicNumber> for &'_ RealAlgebraicNumber {}
-impl<'a, 'b> AlwaysExactDiv<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {}
+impl AlwaysExactDiv<&RealAlgebraicNumber> for &RealAlgebraicNumber {}
 impl AlwaysExactDivAssign<RealAlgebraicNumber> for RealAlgebraicNumber {}
 impl AlwaysExactDivAssign<&'_ RealAlgebraicNumber> for RealAlgebraicNumber {}
 
@@ -1482,7 +1477,7 @@ impl ExactDiv<RealAlgebraicNumber> for &'_ RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> ExactDiv<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl ExactDiv<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn checked_exact_div(self, rhs: &RealAlgebraicNumber) -> Option<RealAlgebraicNumber> {
         self.clone().checked_exact_div(rhs)
@@ -1522,7 +1517,7 @@ impl Div<&'_ RealAlgebraicNumber> for RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> Div<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl Div<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn div(self, rhs: &RealAlgebraicNumber) -> RealAlgebraicNumber {
         self.exact_div(rhs)
@@ -1564,7 +1559,7 @@ impl Rem<&'_ RealAlgebraicNumber> for RealAlgebraicNumber {
     }
 }
 
-impl<'a, 'b> Rem<&'a RealAlgebraicNumber> for &'b RealAlgebraicNumber {
+impl Rem<&RealAlgebraicNumber> for &RealAlgebraicNumber {
     type Output = RealAlgebraicNumber;
     fn rem(self, rhs: &RealAlgebraicNumber) -> RealAlgebraicNumber {
         self.clone().rem(rhs)
