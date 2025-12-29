@@ -10,8 +10,7 @@ use num_bigint::ToBigInt;
 use num_integer::Integer;
 use num_traits::Pow;
 use rand::{
-    distributions::{uniform::SampleUniform, Distribution, Uniform},
-    Rng,
+    Rng, distr::{Distribution, Uniform, uniform::SampleUniform}
 };
 use std::{fmt, hash::Hash, iter};
 
@@ -50,7 +49,7 @@ where
             .to_bigint()
             .expect("can't convert modulus/characteristic to BigInt");
         let polynomial_exponent = (bigint_characteristic.pow(factor_degree) - 1u32) / 2u32;
-        let coefficient_uniform = Uniform::new(V::zero(), characteristic);
+        let coefficient_uniform = Uniform::new(V::zero(), characteristic).unwrap();
         let mut retval = Vec::new();
         let mut factoring_stack = vec![self.clone()];
         while let Some(mut polynomial) = factoring_stack.pop() {
@@ -117,7 +116,7 @@ mod tests {
             let poly = make_poly(poly, modulus);
             let expected_factors: HashSet<_> = expected_factors
                 .iter()
-                .map(|poly| make_poly(*poly, modulus))
+                .map(|poly| make_poly(poly, modulus))
                 .collect();
             println!("poly: {}", poly);
             println!("factor_degree: {}", factor_degree);
